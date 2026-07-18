@@ -43,10 +43,11 @@ branch and an existing clone stays on its current ref. When it is set, the
 launcher refuses a dirty checkout, validates and fetches the requested ref, then
 checks out the fetched commit in detached-HEAD mode. It never resets the checkout.
 
-The script then starts `codex login` when needed. Complete that ChatGPT browser
-flow manually; it never reads or stores an API key. After authentication, the same
+The script then starts `codex login --device-auth` when needed. Complete the
+headless-friendly device flow in a browser on another machine; it never reads or
+stores an API key. After authentication, the same
 initial command launches Codex in `/workspace/lora-studio`. On an already authenticated
-Pod it skips the login flow and launches Codex directly.
+Pod, including a second execution, it skips the login flow and launches Codex directly.
 
 The Codex installer used by both scripts is the official standalone installer:
 

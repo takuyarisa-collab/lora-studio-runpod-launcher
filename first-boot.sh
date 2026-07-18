@@ -71,6 +71,15 @@ checkout_requested_ref() {
   git -C "$repo_dir" checkout --detach FETCH_HEAD
 }
 
+authenticate_codex() {
+  export PATH="$HOME/.local/bin:$PATH"
+  hash -r
+  if ! codex login status >/dev/null 2>&1; then
+    log 'Codex device authentication is the second required manual step.'
+    codex login --device-auth
+  fi
+}
+
 main() {
   [[ -r /etc/os-release ]] || die 'Unsupported system: /etc/os-release is missing.'
   # shellcheck disable=SC1091
@@ -108,10 +117,7 @@ main() {
   checkout_requested_ref "$repo_dir"
   "$repo_dir/runpod/scripts/bootstrap.sh"
   log "Environment ready in $repo_dir."
-  if ! codex login status >/dev/null 2>&1; then
-    log 'Codex ChatGPT browser authentication is the second required manual step.'
-    codex login
-  fi
+  authenticate_codex
   log 'Authentication complete; launching Codex.'
   cd "$repo_dir"
   exec codex
