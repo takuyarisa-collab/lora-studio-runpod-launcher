@@ -31,6 +31,18 @@ directory when needed:
 LORA_STUDIO_PARENT=/some/persistent/path bash <(curl -fsSL https://raw.githubusercontent.com/takuyarisa-collab/lora-studio-runpod-launcher/main/first-boot.sh)
 ```
 
+Before PR #11 is merged, acceptance tests can fetch and check out its branch
+without resetting an existing checkout:
+
+```bash
+LORA_STUDIO_REF=feature/runpod-bootstrap-phase-1-6 bash <(curl -fsSL https://raw.githubusercontent.com/takuyarisa-collab/lora-studio-runpod-launcher/main/first-boot.sh)
+```
+
+When `LORA_STUDIO_REF` is unset, a new clone stays on the repository default
+branch and an existing clone stays on its current ref. When it is set, the
+launcher refuses a dirty checkout, validates and fetches the requested ref, then
+checks out the fetched commit in detached-HEAD mode. It never resets the checkout.
+
 The script then starts `codex login` when needed. Complete that ChatGPT browser
 flow manually; it never reads or stores an API key. After authentication, the same
 initial command launches Codex in `/workspace/lora-studio`. On an already authenticated

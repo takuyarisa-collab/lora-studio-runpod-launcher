@@ -4,6 +4,7 @@ set -Eeuo pipefail
 readonly REPOSITORY="takuyarisa-collab/lora-studio"
 readonly CODEX_INSTALL_URL="https://chatgpt.com/codex/install.sh"
 readonly DEFAULT_PARENT="${LORA_STUDIO_PARENT:-/workspace}"
+readonly REQUESTED_REF="${LORA_STUDIO_REF:-}"
 
 log() { printf '[first-boot] %s\n' "$*"; }
 die() { printf '[first-boot] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -56,8 +57,18 @@ install_node() {
 install_codex() {
   export PATH="$HOME/.local/bin:$PATH"
   command -v codex >/dev/null 2>&1 && return
-  curl -fsSL "$CODEX_INSTALL_URL" | sh
+  curl -fsSL "$CODEX_INSTALL_URL" | CODEX_NON_INTERACTIVE=1 sh
   hash -r
+}
+
+checkout_requested_ref() {
+  local repo_dir="$1"
+  [[ -n "$REQUESTED_REF" ]] || return
+  [[ -z "$(git -C "$repo_dir" status --porcelain)" ]] || die "$repo_dir has uncommitted changes; refusing to change refs."
+  git check-ref-format --branch "$REQUESTED_REF" >/dev/null 2>&1 || die "Invalid LORA_STUDIO_REF: $REQUESTED_REF"
+  log "Fetching requested repository ref: $REQUESTED_REF"
+  git -C "$repo_dir" fetch --no-tags origin "$REQUESTED_REF"
+  git -C "$repo_dir" checkout --detach FETCH_HEAD
 }
 
 main() {
@@ -94,6 +105,7 @@ main() {
     gh repo clone "$REPOSITORY" "$repo_dir"
   fi
 
+  checkout_requested_ref "$repo_dir"
   "$repo_dir/runpod/scripts/bootstrap.sh"
   log "Environment ready in $repo_dir."
   if ! codex login status >/dev/null 2>&1; then
