@@ -5,6 +5,8 @@ readonly REPOSITORY="takuyarisa-collab/lora-studio"
 readonly CODEX_INSTALL_URL="https://chatgpt.com/codex/install.sh"
 readonly DEFAULT_PARENT="${LORA_STUDIO_PARENT:-/workspace}"
 readonly REQUESTED_REF="${LORA_STUDIO_REF:-}"
+readonly CODEX_SANDBOX="${LORA_STUDIO_CODEX_SANDBOX:-danger-full-access}"
+readonly CODEX_APPROVAL_POLICY="${LORA_STUDIO_CODEX_APPROVAL_POLICY:-never}"
 
 log() { printf '[first-boot] %s\n' "$*"; }
 die() { printf '[first-boot] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -36,7 +38,7 @@ install_gh() {
   as_root install -d -m 0755 /etc/apt/keyrings
   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | as_root tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
   as_root chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-  printf 'deb [arch=%s signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' "$(dpkg --print-architecture)" | as_root tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  printf 'deb [arch=%s signed-by=/etc/apt/keyrings signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' "$(dpkg --print-architecture)" | as_root tee /etc/apt/sources.list.d/github-cli.list >/dev/null
   as_root apt-get update
   DEBIAN_FRONTEND=noninteractive as_root apt-get install -y gh
 }
@@ -63,7 +65,7 @@ install_codex() {
 
 checkout_requested_ref() {
   local repo_dir="$1"
-  [[ -n "$REQUESTED_REF" ]] || return
+  [[ -n "$REQUESTED_REF" ]] || return 0
   [[ -z "$(git -C "$repo_dir" status --porcelain)" ]] || die "$repo_dir has uncommitted changes; refusing to change refs."
   git check-ref-format --branch "$REQUESTED_REF" >/dev/null 2>&1 || die "Invalid LORA_STUDIO_REF: $REQUESTED_REF"
   log "Fetching requested repository ref: $REQUESTED_REF"
@@ -118,9 +120,9 @@ main() {
   "$repo_dir/runpod/scripts/bootstrap.sh"
   log "Environment ready in $repo_dir."
   authenticate_codex
-  log 'Authentication complete; launching Codex.'
+  log "Authentication complete; launching Codex (sandbox=$CODEX_SANDBOX, approval=$CODEX_APPROVAL_POLICY)."
   cd "$repo_dir"
-  exec codex
+  exec codex --sandbox "$CODEX_SANDBOX" --ask-for-approval "$CODEX_APPROVAL_POLICY"
 }
 
 main "$@"
