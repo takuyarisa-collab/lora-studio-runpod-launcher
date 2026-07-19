@@ -45,9 +45,27 @@ checks out the fetched commit in detached-HEAD mode. It never resets the checkou
 
 The script then starts `codex login --device-auth` when needed. Complete the
 headless-friendly device flow in a browser on another machine; it never reads or
-stores an API key. After authentication, the same
-initial command launches Codex in `/workspace/lora-studio`. On an already authenticated
-Pod, including a second execution, it skips the login flow and launches Codex directly.
+stores an API key. After authentication, the same initial command launches Codex
+in `/workspace/lora-studio` with the defaults required by this dedicated RunPod
+workflow:
+
+```text
+--sandbox danger-full-access --ask-for-approval never
+```
+
+This allows Codex to install the pinned runtime, download approved public model
+assets, start local services, and run validation without pausing for repeated
+approval prompts. Use this only on a dedicated Pod whose contents and repository
+instructions you trust. Override either default when a narrower mode is needed:
+
+```bash
+LORA_STUDIO_CODEX_SANDBOX=workspace-write \
+LORA_STUDIO_CODEX_APPROVAL_POLICY=on-request \
+  bash <(curl -fsSL https://raw.githubusercontent.com/takuyarisa-collab/lora-studio-runpod-launcher/main/first-boot.sh)
+```
+
+On an already authenticated Pod, including a second execution, the launcher
+skips the login flow and launches Codex directly.
 
 The Codex installer used by both scripts is the official standalone installer:
 
@@ -93,6 +111,11 @@ cookies, signed URLs, or Codex/GitHub authentication state.
 
 ## Common failures
 
+- **Launcher exits when `LORA_STUDIO_REF` is unset:** use the current launcher;
+  an unset ref is a supported no-op and should not fail under `set -e`.
+- **Codex asks for every command approval:** use the current launcher defaults or
+  start Codex with `--sandbox danger-full-access --ask-for-approval never` on the
+  dedicated Pod.
 - **Node 12/older Node:** the scripts install Node.js 20 when the detected major
   version is below 20.
 - **`libnode-dev` conflict:** an old Ubuntu `libnode-dev` package is removed only
