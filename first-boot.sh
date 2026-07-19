@@ -38,7 +38,7 @@ install_gh() {
   as_root install -d -m 0755 /etc/apt/keyrings
   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | as_root tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
   as_root chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-  printf 'deb [arch=%s signed-by=/etc/apt/keyrings signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' "$(dpkg --print-architecture)" | as_root tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  printf 'deb [arch=%s signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' "$(dpkg --print-architecture)" | as_root tee /etc/apt/sources.list.d/github-cli.list >/dev/null
   as_root apt-get update
   DEBIAN_FRONTEND=noninteractive as_root apt-get install -y gh
 }
